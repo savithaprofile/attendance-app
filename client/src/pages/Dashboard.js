@@ -16,6 +16,7 @@ import {
   FiUsers,
   FiCheckSquare,
   FiBarChart2,
+  FiImage,
   FiMenu,
   FiChevronRight
 } from 'react-icons/fi';
@@ -251,6 +252,7 @@ const Dashboard = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
@@ -259,41 +261,55 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {selectedEmployee.attendance.map((record) => (
-                    <tr key={record._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          record.type === 'check-in' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
-                        }`}>
-                          {record.type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(record.timestamp)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatTime(record.timestamp)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <FiMapPin className="mr-1" />
-                          {record.location || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {record.isInOffice ? (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                            In Office
-                          </span>
-                        ) : (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
-                            Remote
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+  {selectedEmployee.attendance
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .map((record) => (
+      <tr key={record._id} className="hover:bg-gray-50">
+        <td className="px-6 py-4 whitespace-nowrap">
+          {record.image ? (
+            <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
+              <img
+                src={`http://localhost:5000/uploads/${record.image}`}
+                alt="attendance"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md">
+              <FiImage className="text-gray-400" />
+            </div>
+          )}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+            record.type === 'check-in' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
+          }`}>
+            {record.type}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {formatDate(record.timestamp)}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {formatTime(record.timestamp)}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {record.location || 'N/A'}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          {record.isInOffice ? (
+            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+              In Office
+            </span>
+          ) : (
+            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
+              Remote
+            </span>
+          )}
+        </td>
+      </tr>
+    ))}
+</tbody>
               </table>
             </div>
           </div>
@@ -429,6 +445,7 @@ const Dashboard = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
@@ -438,8 +455,29 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredData.map((record) => (
+                  {filteredData
+  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+  .map((record) => (
                     <tr key={record._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {record.image ? (
+                          <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
+                            <img
+                              src={`http://localhost:5000/uploads/${record.image}`}
+                              alt="attendance"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.parentElement.innerHTML = '<div class="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md"><FiImage class="text-gray-400" /></div>';
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md">
+                            <FiImage className="text-gray-400" />
+                          </div>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
