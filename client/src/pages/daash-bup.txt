@@ -1,0 +1,87 @@
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const Dashboard = () => {
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem('token');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/attendance/all', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        setAttendanceData(response.data);
+      } catch (error) {
+        console.error('Error fetching attendance:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAttendance();
+  }, [token]);
+
+  if (loading) return <p>Loading attendance records...</p>;
+
+
+  const handleAddEmployee = () => {
+    navigate('/register');
+  };
+
+
+  return (
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-4">Attendance Dashboard</h2>
+      <button
+              onClick={handleAddEmployee}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
+            >
+              Add New Employee
+            </button>
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto border-collapse border border-gray-200">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border px-4 py-2">User</th>
+              <th className="border px-4 py-2">Email</th>
+              <th className="border px-4 py-2">Type</th>
+              <th className="border px-4 py-2">Timestamp</th>
+              <th className="border px-4 py-2">Location</th>
+              <th className="border px-4 py-2">In Office?</th>
+              <th className="border px-4 py-2">Image</th>
+            </tr>
+          </thead>
+          <tbody>
+            {attendanceData.map(record => (
+              <tr key={record._id} className="text-sm text-gray-700">
+                <td className="border px-4 py-2">{record.user?.name}</td>
+                <td className="border px-4 py-2">{record.user?.email}</td>
+                <td className="border px-4 py-2">{record.type}</td>
+                <td className="border px-4 py-2">{new Date(record.timestamp).toLocaleString()}</td>
+                <td className="border px-4 py-2">{record.location}</td>
+                <td className="border px-4 py-2">{record.isInOffice ? 'Yes' : 'No'}</td>
+                <td className="border px-4 py-2">
+                  {record.image && (
+                    <img
+                      src={`http://localhost:5000/uploads/${record.image}`}
+                      alt="attendance"
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
