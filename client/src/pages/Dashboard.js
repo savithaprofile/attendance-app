@@ -341,7 +341,7 @@ const Dashboard = () => {
                                     setSelectedImage(group.checkIn.image);
                                   }}
                                   onError={(e) => {
-                                    e.target.onerror = null;
+                                    e.target.onerror = null; 
                                     e.target.parentElement.innerHTML = '<div class="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md"><FiImage class="text-gray-400" /></div>';
                                   }}
                                 />

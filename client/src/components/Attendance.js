@@ -184,7 +184,7 @@ function Attendance() {
         formData.append('image', image);
 
         try {
-          await axios.post('http://localhost:5000/attendance', formData, {
+          await axios.post(API_ENDPOINTS.postAttendance, formData, {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
               'Content-Type': 'multipart/form-data',
