@@ -9,6 +9,8 @@ import {
   Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
+import { API_ENDPOINTS } from '../utils/api';
+
 function Dashboard() {
   const navigate = useNavigate();
   const [records, setRecords] = useState([]);
@@ -23,7 +25,7 @@ function Dashboard() {
       try {
         setIsLoading(true);
         const dateStr = selectedDate.toISOString().split('T')[0];
-        const res = await axios.get(`http://localhost:5000/admin/attendance?date=${dateStr}`, {
+        const res = await axios.get(API_ENDPOINTS.getAttendanceByDate(dateStr), {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         setRecords(res.data);

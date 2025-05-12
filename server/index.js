@@ -281,12 +281,12 @@ app.put('/users/:id', authMiddleware, roleMiddleware('admin'), async (req, res) 
 
 
 // async function setupAdmin() {
-//   const existing = await User.findOne({ email: 'admin@example.com' });
+//   const existing = await User.findOne({ email: 'ranjith.c96me@gmail.com' });
 //   if (!existing) {
-//     const hashed = await bcrypt.hash('Admin@123', 10);
+//     const hashed = await bcrypt.hash('12345678', 10);
 //     await User.create({
-//       name: 'Admin User',
-//       email: 'admin@example.com',
+//       name: 'Ranjith',
+//       email: 'ranjith.c96me@gmail.com',
 //       password: hashed,
 //       role: 'admin',
 //     });
@@ -294,7 +294,7 @@ app.put('/users/:id', authMiddleware, roleMiddleware('admin'), async (req, res) 
 //   }
 // }
 
-//setupAdmin();
+// setupAdmin();
 
 async function startServer() {
   try {

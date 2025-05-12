@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from './AuthContext';
+import { API_ENDPOINTS } from '../utils/api'; 
+
 
 function Login() {
 // To Check geolocation of office:
@@ -31,7 +33,7 @@ function Login() {
     
     try {
       // 1. Make login request
-      const response = await axios.post('http://localhost:5000/login', { 
+      const response = await axios.post(API_ENDPOINTS.login, { 
         email, 
         password 
       }, {

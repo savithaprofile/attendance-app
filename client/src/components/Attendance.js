@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { FiCamera, FiCheckCircle, FiClock, FiMapPin, FiRefreshCw, FiUser } from 'react-icons/fi';
 import { jwtDecode } from 'jwt-decode';
+import { API_ENDPOINTS } from '../utils/api';
 
 function Attendance() {
   const [location, setLocation] = useState('');
@@ -25,7 +26,7 @@ function Attendance() {
 
     const fetchLastAttendance = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/attendance/last', {
+        const res = await axios.get(API_ENDPOINTS.getLastAttendance, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

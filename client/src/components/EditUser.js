@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FiUser, FiMail, FiLock, FiCalendar, FiChevronDown } from 'react-icons/fi';
+import { API_ENDPOINTS } from '../utils/api';
 
 function EditUser() {
   const [users, setUsers] = useState([]);
@@ -30,7 +31,7 @@ function EditUser() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/users');
+        const response = await axios.get(API_ENDPOINTS.getUsers);
         setUsers(response.data);
 
         console.log('response.data:', response.data);
