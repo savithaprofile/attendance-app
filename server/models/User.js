@@ -1,4 +1,3 @@
-//server/models/User.js
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
@@ -16,11 +15,23 @@ const UserSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
+  phone: {
+    type: String,
+    required: true
+  },
+  position: {
+    type: String,
+    required: true
+  },
+  company: {
+    type: String,
+    required: true
+  },
   role: { 
     type: String, 
     enum: ['employee', 'admin'], 
     default: 'employee' 
-  },
+  }
 }, {
   timestamps: true
 });

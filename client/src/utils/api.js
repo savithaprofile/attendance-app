@@ -1,5 +1,5 @@
 // src/utils/api.js
-export const BASE_URL = 'https://attendance-app-vrwz.onrender.com';
+export const BASE_URL = 'http://localhost:5000';
 
 export const API_ENDPOINTS = {
   attendance: `${BASE_URL}/attendance/all`,

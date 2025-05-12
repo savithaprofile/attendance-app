@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { API_ENDPOINTS } from '../utils/api';
+import urbancodeLogo from '../assets/uclogo.png';
+import jobzenterLogo from '../assets/jzlogo.png';
+import {FiMail, FiPhone, FiChevronLeft } from 'react-icons/fi';
 import {
   FiUserPlus,
   FiClock,
@@ -26,6 +29,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
+
 const Dashboard = () => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -41,6 +45,7 @@ const Dashboard = () => {
   const [dateFilter, setDateFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [officeFilter, setOfficeFilter] = useState('all');
+  const [companyFilter, setCompanyFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -54,6 +59,12 @@ const Dashboard = () => {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);
+
+        let result = attendanceData;
+        if (companyFilter !== 'all') {
+         result = result.filter(record => record.user?.company === companyFilter);
+        }
+
         
         setAttendanceData(attendanceRes.data);
         setFilteredData(attendanceRes.data);
@@ -205,44 +216,92 @@ const Dashboard = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white shadow-md transition-all duration-300`}>
-        <div className="p-4 flex items-center justify-between border-b">
-          {sidebarOpen ? (
-            <h2 className="text-xl font-semibold text-gray-800">Employees</h2>
-          ) : (
-            <FiUsers className="text-xl text-gray-800" />
-          )}
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <FiMenu />
-          </button>
-        </div>
-        <div className="overflow-y-auto h-[calc(100%-60px)]">
-          {employees.map(employee => (
-            <div 
-              key={employee._id}
-              onClick={() => handleEmployeeClick(employee)}
-              className={`p-3 flex items-center cursor-pointer hover:bg-gray-100 ${
-                selectedEmployee?._id === employee._id ? 'bg-blue-50 border-r-4 border-blue-500' : ''
-              }`}
-            >
-              <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                <FiUser className="text-gray-500" />
-              </div>
-              {sidebarOpen && (
-                <div className="ml-3 flex-1 overflow-hidden">
-                  <p className="text-sm font-medium text-gray-900 truncate">{employee.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{employee.email}</p>
-                </div>
-              )}
-              {sidebarOpen && <FiChevronRight className="text-gray-400" />}
+    {/* Sidebar */}
+<div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white shadow-md transition-all duration-300`}>
+  <div className="p-4 flex items-center justify-between border-b">
+    {sidebarOpen ? (
+      <h2 className="text-xl font-semibold text-gray-800">Employees</h2>
+    ) : (
+      <FiUsers className="text-xl text-gray-800" />
+    )}
+    <button 
+      onClick={() => setSidebarOpen(!sidebarOpen)}
+      className="text-gray-500 hover:text-gray-700"
+    >
+      <FiMenu />
+    </button>
+  </div>
+
+  <div 
+  className={`p-3 flex items-center cursor-pointer hover:bg-gray-100 ${
+    selectedEmployee === 'all' ? 'bg-blue-50 border-r-4 border-blue-500' : ''
+  }`}
+  onClick={() => setSelectedEmployee('all')}
+>
+  <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+    <FiUsers className="text-gray-500" />
+  </div>
+  {sidebarOpen && (
+    <div className="ml-3 text-sm font-medium text-gray-700">All Employees</div>
+  )}
+</div>
+
+
+  <div className="overflow-y-auto h-[calc(100%-60px)]">
+    {employees.map(employee => {
+      const logo = employee.company === 'Urbancode'
+        ? urbancodeLogo
+        : employee.company === 'Jobzenter'
+        ? jobzenterLogo
+        : null;
+
+      return (
+        <div 
+          key={employee._id}
+          onClick={() => handleEmployeeClick(employee)}
+          className={`p-3 flex items-center cursor-pointer hover:bg-gray-100 ${
+            selectedEmployee?._id === employee._id ? 'bg-blue-50 border-r-4 border-blue-500' : ''
+          }`}
+        >
+          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+            {logo ? (
+              <img src={logo} alt={employee.company} className="h-6 w-6 object-contain" />
+            ) : (
+              <FiUser className="text-gray-500" />
+            )}
+          </div>
+          {sidebarOpen && (
+            <div className="ml-3 flex-1 overflow-hidden">
+              <p className="text-sm font-medium text-gray-900 truncate">{employee.name}</p>
+              <p className="text-xs text-gray-500 truncate">{employee.position}</p>
             </div>
-          ))}
+          )}
+          {sidebarOpen && <FiChevronRight className="text-gray-400" />}
+          
         </div>
-      </div>
+        
+      );
+    })}
+
+    
+  {/* Logout Button */}
+  <div className="p-4 border-t border-gray-200">
+    <button
+      onClick={() => {
+        localStorage.removeItem('token');
+        navigate('/login');
+      }}
+      className="flex items-center w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-md"
+    >
+      <FiXCircle className="mr-2" />
+      {sidebarOpen && 'Logout'}
+    </button>
+  </div>
+  </div>
+  
+  
+</div>
+
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-6">
@@ -275,18 +334,48 @@ const Dashboard = () => {
 
         {selectedEmployee ? (
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">{selectedEmployee.name}</h2>
-                <p className="text-gray-600">{selectedEmployee.email}</p>
-              </div>
-              <button 
-                onClick={() => setSelectedEmployee(null)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                Back to all
-              </button>
-            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4 sm:gap-6 bg-white p-4 rounded-xl shadow-sm border">
+  
+  {/* Left Section: Name & Position */}
+  <div>
+    <h2 className="text-2xl font-bold text-gray-800">{selectedEmployee.name}</h2>
+    <p className="text-sm text-gray-500">{selectedEmployee.position}</p>
+  </div>
+
+  {/* Center: Company Logo */}
+  <div className="flex-shrink-0 w-16 h-16 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden shadow-sm">
+    {selectedEmployee.company === 'Urbancode' ? (
+      <img src={urbancodeLogo} alt="Urbancode" className="h-10 w-10 object-contain" />
+    ) : selectedEmployee.company === 'Jobzenter' ? (
+      <img src={jobzenterLogo} alt="Jobzenter" className="h-10 w-10 object-contain" />
+    ) : (
+      <FiUser className="text-gray-400 w-6 h-6" />
+    )}
+  </div>
+
+  {/* Right Section: Contact Info */}
+  <div className="text-right">
+    <p className="text-sm text-gray-500 flex items-center justify-end">
+      <FiMail className="mr-1" /> {selectedEmployee.email}
+    </p>
+    <p className="text-sm text-gray-500 flex items-center justify-end">
+      <FiPhone className="mr-1" /> {selectedEmployee.phone}
+    </p>
+  </div>
+
+  {/* Bottom or Side: Back Button */}
+  <div className="sm:absolute sm:top-4 sm:right-4">
+    <button 
+      onClick={() => setSelectedEmployee(null)}
+      className="inline-flex items-center text-sm text-blue-600 hover:underline mt-2 sm:mt-0"
+    >
+      <FiChevronLeft className="mr-1" /> Back to all
+    </button>
+  </div>
+</div>
+
+
+            
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="bg-gray-50 p-4 rounded-lg">
@@ -437,7 +526,7 @@ const Dashboard = () => {
                         )}
                       </td>
                     </tr>
-                  ))}
+                  ))} 
                 </tbody>
               </table>
             </div>
@@ -526,7 +615,7 @@ const Dashboard = () => {
             </div>
 
             {/* Filters */}
-            <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiSearch className="text-gray-400" />
@@ -568,7 +657,19 @@ const Dashboard = () => {
                 <option value="yes">In Office</option>
                 <option value="no">Remote</option>
               </select>
+              <select
+                 value={companyFilter}
+                 onChange={e => setCompanyFilter(e.target.value)}
+                 className="border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  >
+                  <option value="all">All Companies</option>
+                  <option value="Urbancode">Urbancode</option>
+                  <option value="Jobzenter">Jobzenter</option>
+              </select>
+
             </div>
+
+            
 
             <div id="attendance-table" className="overflow-auto bg-white rounded-xl shadow-sm border border-gray-100">
               <table className="min-w-full divide-y divide-gray-200">

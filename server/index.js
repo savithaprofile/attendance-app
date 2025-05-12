@@ -39,14 +39,14 @@ const upload = multer({ storage });
 //  Register Route
 app.post('/register', async (req, res) => {
   try {
-    const { name, email, password, schedule } = req.body;
-    
+    const { name, email, password, phone, position, company, schedule } = req.body;
+
     // Validate required fields
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+    if (!name || !email || !password || !phone || !position || !company) {
+      return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // Check if user already exists
+    // Check if email is already registered
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already in use' });
@@ -54,15 +54,18 @@ app.post('/register', async (req, res) => {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     // Create user
-    const user = new User({ 
-      name, 
-      email, 
+    const user = new User({
+      name,
+      email,
       password: hashedPassword,
-      role: 'employee' // Default role
+      phone,
+      position,
+      company,
+      role: 'employee'
     });
-    
+
     await user.save();
 
     // Create schedule if provided
@@ -74,12 +77,15 @@ app.post('/register', async (req, res) => {
       await userSchedule.save();
     }
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'User registered successfully',
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
+        position: user.position,
+        company: user.company,
         role: user.role
       }
     });
@@ -171,32 +177,79 @@ app.get('/attendance/last', authMiddleware, async (req, res) => {
 // Get all users (admin only)
 app.get('/users', async (req, res) => {
   try {
-    const users = await User.find({}, 'name email role');
-    res.json(users);console.log(users);
+    const users = await User.find({}, 'name email role phone position company');
+    res.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+
 // Get single user
 app.get('/users/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).select('-password'); // Exclude password for safety
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
+
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role
+      phone: user.phone,
+      position: user.position,
+      company: user.company,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
     });
   } catch (error) {
     console.error('Error fetching user:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// Get all attendance records for a user
+app.get('/attendance/user/:userId', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const records = await Attendance.find({ user: req.params.userId }).populate('user', 'name email');
+    res.json(records);
+  } catch (error) {
+    console.error('Error fetching attendance records:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});   
+
+// Get all attendance records for the logged-in user
+app.get('/attendance/me', authMiddleware, async (req, res) => {
+  try {
+    const records = await Attendance.find({ user: req.user._id }).populate('user', 'name email');
+    res.json(records);
+  } catch (error) {
+    console.error('Error fetching attendance records:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+// Get all attendance records for a specific date
+app.get('/attendance/date/:date', authMiddleware, roleMiddleware('admin'), async (req, res) => {
+  try {
+    const date = new Date(req.params.date);
+    const records = await Attendance.find({
+      timestamp: {
+        $gte: new Date(date.setHours(0, 0, 0)),
+        $lt: new Date(date.setHours(23, 59, 59))
+      }
+    }).populate('user', 'name email');
+    res.json(records);
+  } catch (error) {
+    console.error('Error fetching attendance records:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 
 // Get user's schedule
 app.get('/schedules/user/:userId', authMiddleware, async (req, res) => {
@@ -232,8 +285,8 @@ app.get('/users/me', authMiddleware, async (req, res) => {
 // Update user
 app.put('/users/:id', authMiddleware, roleMiddleware('admin'), async (req, res) => {
   try {
-    const { name, email, password, schedule } = req.body;
-    const updateData = { name, email };
+    const { name, email, password, phone, position, company, schedule } = req.body;
+    const updateData = { name, email, phone, position, company };
 
     // Only update password if provided
     if (password) {
@@ -267,6 +320,9 @@ app.put('/users/:id', authMiddleware, roleMiddleware('admin'), async (req, res) 
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
+        position: user.position,
+        company: user.company,
         role: user.role
       }
     });
@@ -275,6 +331,7 @@ app.put('/users/:id', authMiddleware, roleMiddleware('admin'), async (req, res) 
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 
@@ -289,8 +346,11 @@ app.put('/users/:id', authMiddleware, roleMiddleware('admin'), async (req, res) 
 //       email: 'ranjith.c96me@gmail.com',
 //       password: hashed,
 //       role: 'admin',
+//       phone: '6374129515',       // ← required
+//       position: 'Admin',         // ← required
+//       company: 'Urbancode'       // ← required
 //     });
-//     console.log('Admin created: admin@example.com / Admin@123');
+//     console.log('Admin created: ranjith.c96me@gmail.com / 12345678');
 //   }
 // }
 

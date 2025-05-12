@@ -13,6 +13,7 @@ function Attendance() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isCapturing, setIsCapturing] = useState(false);
+  const [showAttendanceForm, setShowAttendanceForm] = useState(false);
   const [userName, setUserName] = useState('');
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -210,135 +211,151 @@ function Attendance() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-6">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">
-              {type === 'check-in' ? 'Check In' : 'Check Out'}
-            </h2>
-            <p className="text-gray-600 mt-1">
-              {type === 'check-in' ? 'Start your work day' : 'End your work day'}
-            </p>
-            {userName && (
-              <div className="flex items-center justify-center mt-2 text-gray-700">
-                <FiUser className="mr-1" />
-                <span>{userName}</span>
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="w-full max-w-md bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="p-6">
+        {!showAttendanceForm ? (
+          <>
+            <h2 className="text-xl font-semibold text-center mb-6 text-gray-800">Mark Your Attendance</h2>
+            <div className="flex justify-around">
+              <button
+                onClick={() => {
+                  setType('check-in');
+                  setShowAttendanceForm(true);
+                }}
+                className="w-24 h-24 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center text-center"
+              >
+                Check In
+              </button>
+
+              <button
+                onClick={() => {
+                  setType('check-out');
+                  setShowAttendanceForm(true);
+                }}
+                className="w-24 h-24 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg flex items-center justify-center text-center"
+              >
+                Check Out
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">
+                {type === 'check-in' ? 'Check In' : 'Check Out'}
+              </h2>
+              <p className="text-gray-600 mt-1">
+                {type === 'check-in' ? 'Start your work day' : 'End your work day'}
+              </p>
+              {userName && (
+                <div className="flex items-center justify-center mt-2 text-gray-700">
+                  <FiUser className="mr-1" />
+                  <span>{userName}</span>
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                {error}
               </div>
             )}
-          </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
+            {success && (
+              <div className="mb-4 p-3 bg-green-50 text-green-600 rounded-lg text-sm">
+                {success}
+              </div>
+            )}
 
-          {success && (
-            <div className="mb-4 p-3 bg-green-50 text-green-600 rounded-lg text-sm">
-              {success}
-            </div>
-          )}
+            <div className="mb-6">
+              <div className="flex items-center mb-3">
+                <FiMapPin className="text-gray-500 mr-2" />
+                <span className="text-sm text-gray-600">
+                  {location ? location : 'Location will be fetched after capture'}
+                </span>
+              </div>
 
-          <div className="mb-6">
-            <div className="flex items-center mb-3">
-              <FiMapPin className="text-gray-500 mr-2" />
-              <span className="text-sm text-gray-600">
-                {location ? location : 'Location will be fetched after capture'}
-              </span>
-            </div>
+              <div className="flex items-center mb-4">
+                <FiClock className="text-gray-500 mr-2" />
+                <span className="text-sm text-gray-600">
+                  {new Date().toLocaleString()}
+                </span>
+              </div>
 
-            <div className="flex items-center mb-4">
-              <FiClock className="text-gray-500 mr-2" />
-              <span className="text-sm text-gray-600">
-                {new Date().toLocaleString()}
-              </span>
-            </div>
-
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
-              {image ? (
-                <div className="relative">
-                  <img
-                    src={URL.createObjectURL(image)}
-                    alt="Captured"
-                    className="w-full h-auto rounded-lg"
-                  />
-                  <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                    Size: {(image.size / 1024).toFixed(1)}KB
-                  </div>
-                  <button
-                    onClick={retakePhoto}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                  >
-                    <FiRefreshCw className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : isCapturing ? (
-                <div className="relative">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-auto rounded-lg"
-                  />
-                  <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4">
+                {image ? (
+                  <div className="relative">
+                    <img
+                      src={URL.createObjectURL(image)}
+                      alt="Captured"
+                      className="w-full h-auto rounded-lg"
+                    />
+                    <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                      Size: {(image.size / 1024).toFixed(1)}KB
+                    </div>
                     <button
-                      onClick={captureImage}
-                      className="bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+                      onClick={retakePhoto}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                     >
-                      <FiCamera className="text-gray-700 text-xl" />
+                      <FiRefreshCw className="h-4 w-4" />
                     </button>
                   </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-48 bg-gray-100 rounded-lg">
-                  <div className="text-gray-500">Camera loading failed</div>
-                </div>
-              )}
+                ) : isCapturing ? (
+                  <div className="relative">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-auto rounded-lg"
+                    />
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                      <button
+                        onClick={captureImage}
+                        className="bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 transition"
+                      >
+                        <FiCamera className="text-gray-700 text-xl" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-48 bg-gray-100 rounded-lg">
+                    <div className="text-gray-500">Camera loading failed</div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Attendance Type
-              </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            <form onSubmit={handleSubmit}>
+              <button
+                type="submit"
+                disabled={!image || isLoading}
+                className={`w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${(!image || isLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <option value="check-in">Check In</option>
-                <option value="check-out">Check Out</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              disabled={!image || isLoading}
-              className={`w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${(!image || isLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <FiCheckCircle className="mr-2" />
-                  {type === 'check-in' ? 'Check In' : 'Check Out'}
-                </>
-              )}
-            </button>
-          </form>
-        </div>
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <FiCheckCircle className="mr-2" />
+                    {type === 'check-in' ? 'Check In' : 'Check Out'}
+                  </>
+                )}
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </div>
-  );
+  </div>
+);
+
 }
 
 export default Attendance;
