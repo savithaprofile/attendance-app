@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
   login: `${BASE_URL}/login`,
   authLogin: `${BASE_URL}/api/auth/login`,
   register: `${BASE_URL}/register`,
+  uploadPath: `${BASE_URL}/uploads`,
   // add more as needed
 };
 

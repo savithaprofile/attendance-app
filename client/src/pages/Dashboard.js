@@ -261,7 +261,7 @@ const Dashboard = () => {
               </button>
               <div className="p-4">
                 <img 
-                  src={`http://localhost:5000/uploads/${selectedImage}`} 
+                  src={`${API_ENDPOINTS.uploadPath}/${selectedImage}`} 
                   alt="Full size attendance" 
                   className="max-w-full max-h-[80vh] object-contain"
                 />
@@ -333,7 +333,7 @@ const Dashboard = () => {
                             <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
                               {group.checkIn?.image ? (
                                 <img
-                                  src={`http://localhost:5000/uploads/${group.checkIn.image}`}
+                                  src={`${API_ENDPOINTS.uploadPath}/${group.checkIn.image}`}
                                   alt="check-in"
                                   className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                                   onClick={(e) => {
@@ -360,7 +360,7 @@ const Dashboard = () => {
                               <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
                                 {group.checkOut?.image ? (
                                   <img
-                                    src={`http://localhost:5000/uploads/${group.checkOut.image}`}
+                                    src={`${API_ENDPOINTS.uploadPath}/${group.checkOut.image}`}
                                     alt="check-out"
                                     className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                                     onClick={(e) => {
@@ -594,7 +594,7 @@ const Dashboard = () => {
                             <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
                               {group.checkIn?.image ? (
                                 <img
-                                  src={`http://localhost:5000/uploads/${group.checkIn.image}`}
+                                  src={`${API_ENDPOINTS.uploadPath}/${group.checkIn.image}`}
                                   alt="check-in"
                                   className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                                   onClick={(e) => {
@@ -621,7 +621,7 @@ const Dashboard = () => {
                               <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
                                 {group.checkOut?.image ? (
                                   <img
-                                    src={`http://localhost:5000/uploads/${group.checkOut.image}`}
+                                    src={`${API_ENDPOINTS.uploadPath}/${group.checkOut.image}`}
                                     alt="check-out"
                                     className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                                     onClick={(e) => {
