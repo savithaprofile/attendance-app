@@ -18,7 +18,8 @@ import {
   FiBarChart2,
   FiImage,
   FiMenu,
-  FiChevronRight
+  FiChevronRight,
+  FiX
 } from 'react-icons/fi';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -32,6 +33,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(null);
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
@@ -63,6 +65,35 @@ const Dashboard = () => {
     };
     fetchData();
   }, [token]);
+
+  const groupAttendanceByUserAndDate = (data) => {
+    const grouped = {};
+    
+    data.forEach(record => {
+      const date = new Date(record.timestamp).toDateString();
+      const key = `${record.user?._id || 'unknown'}-${date}`;
+      
+      if (!grouped[key]) {
+        grouped[key] = {
+          user: record.user,
+          date: date,
+          checkIn: null,
+          checkOut: null,
+          records: []
+        };
+      }
+      
+      grouped[key].records.push(record);
+      
+      if (record.type === 'check-in') {
+        grouped[key].checkIn = record;
+      } else if (record.type === 'check-out') {
+        grouped[key].checkOut = record;
+      }
+    });
+    
+    return Object.values(grouped).sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
 
   useEffect(() => {
     let result = attendanceData;
@@ -168,6 +199,9 @@ const Dashboard = () => {
     </div>
   );
 
+  const groupedData = groupAttendanceByUserAndDate(filteredData);
+  const employeeGroupedData = selectedEmployee ? groupAttendanceByUserAndDate(selectedEmployee.attendance) : [];
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
@@ -211,6 +245,33 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-6">
+        {/* Image Modal */}
+        {selectedImage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4" onClick={() => setSelectedImage(null)}>
+            <div className="relative bg-white rounded-lg max-w-4xl max-h-screen overflow-auto">
+              <button 
+                className="absolute top-2 right-2 p-2 text-gray-500 hover:text-gray-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImage(null);
+                }}
+              >
+                <FiX size={24} />
+              </button>
+              <div className="p-4">
+                <img 
+                  src={`http://localhost:5000/uploads/${selectedImage}`} 
+                  alt="Full size attendance" 
+                  className="max-w-full max-h-[80vh] object-contain"
+                />
+                <div className="mt-2 text-center text-sm text-gray-500">
+                  Click anywhere to close
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {selectedEmployee ? (
           <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
             <div className="flex justify-between items-start mb-6">
@@ -261,55 +322,122 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-  {selectedEmployee.attendance
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-    .map((record) => (
-      <tr key={record._id} className="hover:bg-gray-50">
-        <td className="px-6 py-4 whitespace-nowrap">
-          {record.image ? (
-            <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
-              <img
-                src={`http://localhost:5000/uploads/${record.image}`}
-                alt="attendance"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : (
-            <div className="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md">
-              <FiImage className="text-gray-400" />
-            </div>
-          )}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-            record.type === 'check-in' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
-          }`}>
-            {record.type}
-          </span>
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-          {formatDate(record.timestamp)}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-          {formatTime(record.timestamp)}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-          {record.location || 'N/A'}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-          {record.isInOffice ? (
-            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-              In Office
-            </span>
-          ) : (
-            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
-              Remote
-            </span>
-          )}
-        </td>
-      </tr>
-    ))}
-</tbody>
+                  {employeeGroupedData.map((group) => (
+                    <tr key={group.date} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex space-x-2">
+                          {/* Check-in Image */}
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs text-gray-500 mb-1">Check-in</span>
+                            <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
+                              {group.checkIn?.image ? (
+                                <img
+                                  src={`http://localhost:5000/uploads/${group.checkIn.image}`}
+                                  alt="check-in"
+                                  className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedImage(group.checkIn.image);
+                                  }}
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.parentElement.innerHTML = '<div class="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md"><FiImage class="text-gray-400" /></div>';
+                                  }}
+                                />
+                              ) : (
+                                <div className="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md">
+                                  <FiImage className="text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Check-out Image */}
+                          {group.checkOut && (
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs text-gray-500 mb-1">Check-out</span>
+                              <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
+                                {group.checkOut?.image ? (
+                                  <img
+                                    src={`http://localhost:5000/uploads/${group.checkOut.image}`}
+                                    alt="check-out"
+                                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedImage(group.checkOut.image);
+                                    }}
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.parentElement.innerHTML = '<div class="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md"><FiImage class="text-gray-400" /></div>';
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md">
+                                    <FiImage className="text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col space-y-1">
+                          {group.checkIn && (
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              Check-in
+                            </span>
+                          )}
+                          {group.checkOut && (
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                              Check-out
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(group.checkIn?.timestamp || group.checkOut?.timestamp)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex flex-col space-y-1">
+                          {group.checkIn && (
+                            <span>{formatTime(group.checkIn.timestamp)}</span>
+                          )}
+                          {group.checkOut && (
+                            <span>{formatTime(group.checkOut.timestamp)}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex flex-col space-y-1">
+                          {group.checkIn?.location && (
+                            <div className="flex items-center">
+                              <FiMapPin className="mr-1" />
+                              {group.checkIn.location}
+                            </div>
+                          )}
+                          {group.checkOut?.location && group.checkOut.location !== group.checkIn?.location && (
+                            <div className="flex items-center">
+                              <FiMapPin className="mr-1" />
+                              {group.checkOut.location}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {group.checkIn?.isInOffice ? (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            In Office
+                          </span>
+                        ) : (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800">
+                            Remote
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
           </div>
@@ -447,7 +575,7 @@ const Dashboard = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in/out</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
@@ -455,28 +583,64 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredData
-  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-  .map((record) => (
-                    <tr key={record._id} className="hover:bg-gray-50">
+                  {groupedData.map((group) => (
+                    <tr key={`${group.user?._id || 'unknown'}-${group.date}`} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {record.image ? (
-                          <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
-                            <img
-                              src={`http://localhost:5000/uploads/${record.image}`}
-                              alt="attendance"
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.parentElement.innerHTML = '<div class="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md"><FiImage class="text-gray-400" /></div>';
-                              }}
-                            />
+                        <div className="flex space-x-2">
+                          {/* Check-in Image */}
+                          <div className="flex flex-col items-center">
+                            <span className="text-xs text-gray-500 mb-1">Check-in</span>
+                            <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
+                              {group.checkIn?.image ? (
+                                <img
+                                  src={`http://localhost:5000/uploads/${group.checkIn.image}`}
+                                  alt="check-in"
+                                  className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedImage(group.checkIn.image);
+                                  }}
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.parentElement.innerHTML = '<div class="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md"><FiImage class="text-gray-400" /></div>';
+                                  }}
+                                />
+                              ) : (
+                                <div className="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md">
+                                  <FiImage className="text-gray-400" />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        ) : (
-                          <div className="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md">
-                            <FiImage className="text-gray-400" />
-                          </div>
-                        )}
+                          
+                          {/* Check-out Image */}
+                          {group.checkOut && (
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs text-gray-500 mb-1">Check-out</span>
+                              <div className="h-12 w-12 rounded-md overflow-hidden border border-gray-200">
+                                {group.checkOut?.image ? (
+                                  <img
+                                    src={`http://localhost:5000/uploads/${group.checkOut.image}`}
+                                    alt="check-out"
+                                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedImage(group.checkOut.image);
+                                    }}
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.parentElement.innerHTML = '<div class="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md"><FiImage class="text-gray-400" /></div>';
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="h-12 w-12 flex items-center justify-center bg-gray-100 rounded-md">
+                                    <FiImage className="text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -484,32 +648,56 @@ const Dashboard = () => {
                             <FiUser className="text-gray-500" />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{record.user?.name || 'Unknown'}</div>
-                            <div className="text-sm text-gray-500">{record.user?.email || 'N/A'}</div>
+                            <div className="text-sm font-medium text-gray-900">{group.user?.name || 'Unknown'}</div>
+                            <div className="text-sm text-gray-500">{group.user?.email || 'N/A'}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          record.type === 'check-in' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
-                        }`}>
-                          {record.type}
-                        </span>
+                        <div className="flex flex-col space-y-1">
+                          {group.checkIn && (
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              Check-in
+                            </span>
+                          )}
+                          {group.checkOut && (
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                              Check-out
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(record.timestamp)}
+                        {formatDate(group.checkIn?.timestamp || group.checkOut?.timestamp)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatTime(record.timestamp)}
+                        <div className="flex flex-col space-y-1">
+                          {group.checkIn && (
+                            <span>{formatTime(group.checkIn.timestamp)}</span>
+                          )}
+                          {group.checkOut && (
+                            <span>{formatTime(group.checkOut.timestamp)}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <FiMapPin className="mr-1" />
-                          {record.location || 'N/A'}
+                        <div className="flex flex-col space-y-1">
+                          {group.checkIn?.location && (
+                            <div className="flex items-center">
+                              <FiMapPin className="mr-1" />
+                              {group.checkIn.location}
+                            </div>
+                          )}
+                          {group.checkOut?.location && group.checkOut.location !== group.checkIn?.location && (
+                            <div className="flex items-center">
+                              <FiMapPin className="mr-1" />
+                              {group.checkOut.location}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {record.isInOffice ? (
+                        {group.checkIn?.isInOffice ? (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                             In Office
                           </span>
